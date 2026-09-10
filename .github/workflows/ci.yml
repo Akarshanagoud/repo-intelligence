@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - name: Lint
+        run: ruff check src tests
+      - name: Test
+        run: pytest --cov=repointel --cov-report=term-missing
+
+  self-analysis:
+    # The tool is pointed at itself. A code-analysis tool that cannot survive
+    # its own codebase is not ready to be pointed at anyone else's.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0     # full history, so churn analysis has data
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -e .
+
+      - name: Architecture gate - no cycles, no parse failures
+        run: repointel check . --max-cycles 0 --max-parse-failures 0
+
+      - name: Summary, architecture and insights all render
+        run: |
+          set -e
+          repointel summary . > summary.md
+          repointel arch . > arch.txt
+          repointel insights . > insights.txt
+          repointel arch . --mermaid > graph.mmd
+          grep -q "^# " summary.md
+          grep -q "import cycles" arch.txt
+          grep -q "^graph TD" graph.mmd
+
+      - name: Search finds a known symbol in this repository
+        run: |
+          set -e
+          repointel search . "split an identifier into words" --json > hits.json
+          python -c "
+          import json, sys
+          hits = json.load(open('hits.json'))
+          if not any('split_identifier' in (h.get('symbol') or '') or 'split_identifier' in ' '.join(h.get('contains', [])) for h in hits):
+              sys.exit('search failed to find split_identifier in its own source')
+          print('found split_identifier')
+          "
+
+      - name: Churn analysis works against real git history
+        run: |
+          set -e
+          repointel insights . > with_git.txt
+          if grep -q "no git history available" with_git.txt; then
+            echo "expected git churn to be available with fetch-depth 0"; exit 1
+          fi
+
+      - name: Upload the self-analysis report
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-analysis
+          path: |
+            summary.md
+            arch.txt
+            insights.txt
+            graph.mmd
