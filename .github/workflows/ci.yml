@@ -54,7 +54,7 @@ jobs:
       - name: Search finds a known symbol in this repository
         run: |
           set -e
-          repointel search . "split an identifier into words" --json > hits.json
+          repointel search "split an identifier into words" . --json > hits.json
           python -c "
           import json, sys
           hits = json.load(open('hits.json'))

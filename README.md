@@ -11,7 +11,7 @@ discovery, and a ranked list of where the risk actually is.
 ```bash
 pip install -e ".[dev]"
 repointel summary .
-repointel search . "where do we validate the auth token"
+repointel search "where do we validate the auth token" .
 repointel arch . --mermaid
 ```
 
@@ -91,7 +91,7 @@ block injection", so unranked search returns the test suite and not the code it
 exercises. Test chunks therefore carry a rank penalty by default:
 
 ```
-$ repointel search ../promptguard "detect prompt injection attacks"
+$ repointel search "detect prompt injection attacks" ../promptguard
 1. [0.0284] src.promptguard.detectors.injection.detect
    src/promptguard/detectors/injection.py:240-286  (function)
 ```
