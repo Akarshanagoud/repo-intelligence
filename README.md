@@ -3,10 +3,12 @@
 Codebase analysis for developers: natural-language code search, architecture
 discovery, and a ranked list of where the risk actually is.
 
-[![CI](https://github.com/akarshanamachanpally/repo-intelligence/actions/workflows/ci.yml/badge.svg)](https://github.com/akarshanamachanpally/repo-intelligence/actions/workflows/ci.yml)
+[![CI](https://github.com/Akarshanagoud/repo-intelligence/actions/workflows/ci.yml/badge.svg)](https://github.com/Akarshanagoud/repo-intelligence/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
+
+**Docs:** [Architecture and use cases](docs/ARCHITECTURE.md) · [Verified results](docs/RESULTS.md)
 
 ```bash
 pip install -e ".[dev]"
