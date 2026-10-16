@@ -7,6 +7,7 @@
     repointel symbol . AuditLog              # jump to a definition
     repointel duplicates .                   # copy-paste detection
     repointel check . --max-cycles 0         # CI gate
+    repointel ui .                           # codebase explorer (server extra)
 
 Exit codes: 0 fine, 1 a check failed, 2 usage.
 """
@@ -14,7 +15,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
+import threading
+import webbrowser
+from pathlib import Path
 
 from .analyzer import Analysis, AnalysisConfig, analyze
 from .scanner import LANGUAGES
@@ -252,6 +257,26 @@ def cmd_check(args: argparse.Namespace) -> int:
     return EXIT_FAILED if failures else EXIT_OK
 
 
+def cmd_ui(args: argparse.Namespace) -> int:
+    try:
+        import uvicorn
+    except ImportError:
+        print("the explorer needs the server extra: pip install 'repointel[server]'", file=sys.stderr)
+        return EXIT_USAGE
+    root = Path(args.path).resolve()
+    if not root.is_dir():
+        print(f"error: not a directory: {root}", file=sys.stderr)
+        return EXIT_USAGE
+    # server.py analyses this path at import time.
+    os.environ["REPOINTEL_PATH"] = str(root)
+    url = f"http://{args.host}:{args.port}/ui/"
+    print(f"repointel explorer for {root}: {url}  (Ctrl+C to stop)")
+    if not args.no_browser:
+        threading.Timer(1.5, webbrowser.open, args=(url,)).start()
+    uvicorn.run("repointel.server:app", host=args.host, port=args.port, log_level="warning")
+    return EXIT_OK
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="repointel",
@@ -324,6 +349,13 @@ def build_parser() -> argparse.ArgumentParser:
     check.add_argument("--min-doc-coverage", type=float)
     check.add_argument("--max-parse-failures", type=int)
     check.set_defaults(func=cmd_check)
+
+    ui = sub.add_parser("ui", help="open the codebase explorer (needs the server extra)")
+    ui.add_argument("path", nargs="?", default=".", help="repository root")
+    ui.add_argument("--host", default="127.0.0.1")
+    ui.add_argument("--port", type=int, default=8770)
+    ui.add_argument("--no-browser", action="store_true", help="do not open a browser tab")
+    ui.set_defaults(func=cmd_ui)
 
     return parser
 

@@ -166,6 +166,32 @@ hairball.
 
 ---
 
+## Web UI
+
+```bash
+pip install -e ".[server]"
+repointel ui ../promptguard    # opens http://127.0.0.1:8770/ui/
+```
+
+![Architecture view: the module import graph with hubs outlined, and coupling per module](docs/images/explorer-architecture.png)
+
+The explorer serves one analysis pass over a local repository:
+
+- **Overview**: size, documentation coverage, complexity, key modules and entry
+  points; analyse another local path from the same page.
+- **Search**: natural-language search with the matching code inline. Suggested
+  queries are taken from the repository's own docstrings.
+- **Architecture**: the import graph laid out by dependency depth, so importers sit
+  to the left of what they import. Hover a module to trace its imports.
+- **Risk**: riskiest files, most complex symbols, undocumented public API, the
+  complexity distribution and duplicate blocks.
+- **Files**: a code viewer with each file's symbol outline.
+
+![Search: a natural-language query matched to a class, with the code that matched](docs/images/explorer-search.png)
+
+File contents are served only for files the scan accepted, so the UI cannot read
+arbitrary paths.
+
 ## Commands
 
 | Command | Purpose |
@@ -179,6 +205,7 @@ hairball.
 | `duplicates` | Cross-file copy-paste detection |
 | `files` | What was scanned, and exactly what was skipped |
 | `check` | CI gate on cycles, complexity, docs, parse failures |
+| `ui` | Open the web explorer (needs the `server` extra) |
 
 ```bash
 repointel check . --max-cycles 0 --max-complexity 25 --min-doc-coverage 0.4
@@ -254,7 +281,9 @@ src/repointel/
   summarize.py     Extractive summaries, optional local-model prose
   analyzer.py      The assembled pipeline
   cli.py           summary / search / arch / insights / check / ...
-tests/             114 tests against a synthetic repo with planted defects
+  server.py        HTTP API behind the explorer
+  web/             Explorer front end: static HTML, CSS and JS, no build step
+tests/             121 tests against a synthetic repo with planted defects
 ```
 
 ## Testing
